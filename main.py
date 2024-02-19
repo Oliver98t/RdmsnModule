@@ -25,10 +25,13 @@ def create_sensor_nodes():
 sensor_nodes = create_sensor_nodes()
 '''
 
-server1 = SensorServer(CAN_BAUDRATE)
+server = SensorServer(CAN_BAUDRATE)
 
 def main():
-    server1.configure_sensor_nodes()
+    server.configure_sensor_nodes()
+    print(server.sensor_nodes)
+    while True:
+        server.get_sensor_node_data()
     '''
     while True:
         sensor_nodes = server1.get_sensor_node_data()
@@ -46,7 +49,8 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+        del server
     except KeyboardInterrupt:
-        del server1
+        del server
     
     

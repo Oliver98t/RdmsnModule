@@ -9,7 +9,7 @@ Class for describing sensor node on the RDMSN
 '''
 
 from Sensors import BMP180, MPU6050
-from struct import unpack
+from struct import unpack, pack
 from datetime import datetime
 
 # start and finish packets to define start/finish of incomcing buffer over CAN
@@ -76,13 +76,4 @@ class sensorNode:
 
 # test class functions
 if __name__ == '__main__':
-    x = '0x20'
-    print(x.encode())
-    measurements = {
-    "temperature" : 10,
-    "pressure" : 40
-    }
-
-    for i,m in enumerate(measurements):
-        print(i)
-        print(m)
+    print( int('0x20', 0) )

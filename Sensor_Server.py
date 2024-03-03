@@ -40,9 +40,10 @@ SENSOR_SERVER_RECEIVE_STATE = 0
 SENSOR_SERVER_SEND_DELAY = 0.5 # in sceonds
 
 # sensor node command state packets/bytes
-SENSOR_NODE_WAIT_COMMAND=[171, 0, 0, 0, 0, 0, 0, 0]
+SENSOR_NODE_WAIT_COMMAND=0 # 0xab
+SENSOR_NODE_RESET_COMMAND=[205, 0, 0, 0, 0, 0, 0, 0] # 0xcd
 SENSOR_NODE_TRANSMIT_PACKET = b"\xff\xff\xff\xff\xff\xff\xff\xff"
-SENSOR_NODE_RECEIVE_STATE_PACKET = b"\xaa\xff\xaa\xff\xaa\xff\xaa\xff"
+SENSOR_NODE_WAIT_STATE_ACK_PACKET = b"\xaa\xff\xaa\xff\xaa\xff\xaa\xff"
 
 
 
@@ -66,13 +67,19 @@ class SensorServer:
             print("Baud NOT rate set for usb device\n")
         else:
             print("Baud rate set for usb device\n")
-        self.usb_device.start(GS_CAN_MODE_NORMAL)
+        #self.usb_device.start(GS_CAN_MODE_NORMAL)
 
     def __del__(self):
         self.usb_device.stop() # drop usb connection upon deletion of object
 
+    def reset_network(self):
+        self.sensor_node_command_packet = SENSOR_NODE_WAIT_COMMAND
+        sensor_node_command_frame = GsUsbFrame( can_id=SENSOR_SERVER_CAN_ID, 
+                            data=self.sensor_node_command_packet   )
+        self.usb_device.send(sensor_node_command_frame)
+
     def configure_sensor_nodes(self):
-        
+        self.usb_device.start(GS_CAN_MODE_NORMAL)
         end_time = time.time()
         can_id_filter = []
         # sensor configuration loop
@@ -95,30 +102,31 @@ class SensorServer:
                         current_sensor_node = sensorNode( sensors=current_sensor_node_sensors, can_id=current_sensor_node_id )
                         self.sensor_nodes.append( current_sensor_node )
             
-
+            # end configuration scan after the SENSOR_SERVER_CONFIG_SCAN_TIME
             if time.time() - end_time >= SENSOR_SERVER_CONFIG_SCAN_TIME:
                 end_time = time.time() + 1
                 
+                # display all sensors and attached sensors
                 for sensor_node in self.sensor_nodes:
                     print(sensor_node.name)
                     for sensor in sensor_node.sensors:
                         print(sensor.name)
                     print("\n")
 
-                self.sensor_node_command_packet = SENSOR_NODE_WAIT_COMMAND
-                sensor_node_command_frame = GsUsbFrame( can_id=SENSOR_SERVER_CAN_ID, 
-                                        data=self.sensor_node_command_packet   )
-                self.usb_device.send(sensor_node_command_frame)
                 print("Configuration scan complete.")
+                self.sensor_node_command_packet[0] = SENSOR_NODE_WAIT_COMMAND
+                sensor_node_command_frame = GsUsbFrame( can_id=SENSOR_SERVER_CAN_ID, 
+                                                    data=self.sensor_node_command_packet   )
+                self.usb_device.send(sensor_node_command_frame)
                 break
+        
         #-------------------------------------------------------------------------------------------
-
-
 
     def get_sensor_node_data(self):
         sensor_node_len =  len(self.sensor_nodes)
         sensor_node_count = 0
 
+        self.usb_device.start(GS_CAN_MODE_NORMAL)
         # loop until data from all sensor nodes retrieved
         while True:
 
@@ -126,23 +134,21 @@ class SensorServer:
             current_sensor_node_id = current_sensor_node.can_id
             
             # send out transmission frame for current sensor node
-            self.sensor_node_command_packet[0] = current_sensor_node_id
+            self.sensor_node_command_packet[0] = int(current_sensor_node_id, 0)
             sensor_node_command_frame = GsUsbFrame( can_id=SENSOR_SERVER_CAN_ID, 
                                                     data=self.sensor_node_command_packet   )
             
             
-
-            break
-            '''
             # unpack bytes for current sensor node
             # -------------------------------------------------------------------------
             iframe = GsUsbFrame()
             if self.usb_device.read(iframe, 1):
                 if iframe.echo_id == GS_USB_NONE_ECHO_ID:
                     current_packet = bytes(iframe.data)
-                    print(iframe)
-                    if iframe.can_id == current_sensor_node_id: # filter out CAN packets  
-                        if current_packet == SENSOR_NODE_RECEIVE_STATE_PACKET: # transmit state
+                    
+                    
+                    if hex(iframe.can_id) == current_sensor_node_id: # filter out CAN packets  
+                        if current_packet == SENSOR_NODE_WAIT_STATE_ACK_PACKET: # transmit state
                             self.usb_device.send(sensor_node_command_frame) # tell current node to send data
 
                         # begin creating sensor buffer for current sensor node if start packet receievd
@@ -159,8 +165,9 @@ class SensorServer:
             # --------------------------------------------------------------------------
             
             # finish loop when data from all sensor nodes read
-            if sensor_node_count == sensor_node_len-1:
+            if sensor_node_count == sensor_node_len:
                 break
         
         return self.sensor_nodes
-        '''
+        
+            

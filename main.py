@@ -29,21 +29,19 @@ server = SensorServer(CAN_BAUDRATE)
 
 def main():
     server.configure_sensor_nodes()
-    print(server.sensor_nodes)
     while True:
-        server.get_sensor_node_data()
-    '''
-    while True:
-        sensor_nodes = server1.get_sensor_node_data()
-        for sensor in sensor_nodes[0].sensors:
-            print(f"\n{sensor.name}: {sensor.measurements}\n")
-        
+        sensor_nodes = server.get_sensor_node_data()
+        for sensor_node in sensor_nodes:
+            print(sensor_node.name)
+            for sensor in sensor_node.sensors:
+                print(f"\n{sensor.name}: {sensor.measurements}\n")
+    '''    
         for sensor_node in sensor_nodes:
             print(sensor_node.name)
             for sensor in sensor_node.sensors:
                 print(f"{sensor.name}: {sensor.measurements}")
             print("\n")
-        #'''
+    #'''
         
 
 if __name__ == "__main__":

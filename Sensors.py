@@ -10,6 +10,7 @@ Classes for desciribing real world sensors and byte order for expected data
 # sensor codes
 MPU6050_CODE="0x1"
 BMP180_CODE="0x2"
+DS3231_CODE="0x3"
 
 # abstract sensor class
 class sensor:
@@ -52,11 +53,25 @@ class MPU6050(sensor):
         ]
         self.measurements_num = len(self.measurements)
 
+class DS3231(sensor):
+    def __init__(self):
+        super().__init__()
+        self.sensor_id = "0x03"
+        self.name = "DS3231"
+        self.byte_order = "fxxxx" # when padding and byte string for unpacking data includes endianess char, x represents 1 byte
+        self.measurements = [
+            ["temperature" , 0],
+            ["timestamp", None]
+        ]
+        self.measurements_num = len(self.measurements)
+
 def get_sensor(code):
     if code == MPU6050_CODE:
         return MPU6050()
     elif code == BMP180_CODE:
         return BMP180()
+    elif code == DS3231_CODE:
+        return DS3231()
     else:
         return 0
 

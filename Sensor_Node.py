@@ -30,6 +30,8 @@ TIME_STAMP_INDEX = -1
 TIME_STAMP_VALUE_INDEX = -1
 MEASUREMENT_VALUE_INDEX = 1
 
+
+
 # functions to convert bytes to readable values over CAN bus
 class sensorNode:
     def __init__(self, sensors, can_id):
@@ -91,8 +93,8 @@ class sensorNode:
 
 # test class functions
 if __name__ == '__main__':
-    num = tuple([1])
-    print(num)
+    
+    print(str(datetime.now()))
     
 
     

@@ -10,10 +10,10 @@ extract data from the configurable CAN network
 '''
 
 from Sensor_Node import sensorNode, START_PACKET, END_PACKET
-from Sensors import sensor, BMP180, MPU6050, get_sensor
+from Sensors import sensor, BMP180, MPU6050, get_sensor, MEASUREMENT_FIELD_INDEX, MEASUREMENT_VALUE_INDEX
 import csv
-
 import time
+from datetime import datetime
 from gs_usb.gs_usb import GsUsb
 from gs_usb.gs_usb_frame import GsUsbFrame
 from gs_usb.constants import (
@@ -36,8 +36,6 @@ from gs_usb.gs_usb import (
 SENSOR_SERVER_CAN_ID = 0x01
 SENSOR_SERVER_CONFIG_SCAN_TIME = 1 # in seconds
 SENSOR_SERVER_RESET_TIME = 1
-
-
 SENSOR_SERVER_SEND_DELAY = 0.5 # in seconds
 
 # sensor node command state packets/bytes
@@ -98,7 +96,6 @@ class SensorServer:
                 pass
         
     def configure_sensor_nodes(self):
-        #self.usb_device.start(GS_CAN_MODE_NORMAL)
         end_time = time.time()
         can_id_filter = []
         # sensor configuration loop
@@ -201,21 +198,22 @@ class SensorServer:
         
         return self.sensor_nodes
 
-    def write_sensor_data_to_csv(self, csv_filename: str):
+    def write_sensor_data_to_csv(self):
         
         while True:
             sensor_nodes = self.get_sensor_node_data()
-            
+            print(f"Data received at {datetime.now()}")
+
             for  _, sensor_node in sensor_nodes.items():
-                with open(f"{sensor_node.name}_{csv_filename}", 'a') as csvfile:
+                with open(f"data/{sensor_node.name}.csv", 'a') as csvfile:
                     csvwriter = csv.writer(csvfile)
 
                     for sensor in sensor_node.sensors:
-                        if sensor_node.csv_field_flag == False:
-                            sensor_node.csv_fields.append(sensor.name) 
-                        else:
-                            for measurement in sensor.measurements[:-1]:
-                                sensor_node.csv_measurements.append(measurement)
+                        for measurement in sensor.measurements:
+                            if sensor_node.csv_field_flag == False:
+                                sensor_node.csv_fields.append(f"{sensor.name}_{measurement[MEASUREMENT_FIELD_INDEX]}")
+                            else:
+                                sensor_node.csv_measurements.append(measurement[MEASUREMENT_VALUE_INDEX])
                     
                     if sensor_node.csv_field_flag == False:
                         csvwriter.writerow( sensor_node.csv_fields )

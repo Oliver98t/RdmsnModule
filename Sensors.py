@@ -12,6 +12,9 @@ MPU6050_CODE="0x1"
 BMP180_CODE="0x2"
 DS3231_CODE="0x3"
 
+MEASUREMENT_FIELD_INDEX = 0
+MEASUREMENT_VALUE_INDEX = 1
+
 # abstract sensor class
 class sensor:
     def __init__(self):

@@ -7,7 +7,8 @@ server = SensorServer(CAN_BAUDRATE)
 def main():
     
     server.configure_sensor_nodes()
-    
+    server.write_sensor_data_to_csv()
+    '''
     while True:
         sensor_nodes = server.get_sensor_node_data()
             
@@ -18,7 +19,7 @@ def main():
                 print(f"\n{sensor.name}: {sensor.measurements}\n")
                 
             print("----------------------------------------------------------")
-        
+   '''     
 
     
     
